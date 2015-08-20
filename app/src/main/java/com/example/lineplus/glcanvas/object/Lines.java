@@ -1,8 +1,8 @@
 package com.example.lineplus.glcanvas.object;
 
 import static android.opengl.GLES20.GL_FLOAT;
-import static android.opengl.GLES20.GL_LINES;
-import static android.opengl.GLES20.GL_LINE_STRIP;
+import static android.opengl.GLES20.GL_POINTS;
+import static android.opengl.GLES20.GL_TRIANGLE_STRIP;
 import static android.opengl.GLES20.glDrawArrays;
 import static android.opengl.GLES20.glEnableVertexAttribArray;
 import static android.opengl.GLES20.glVertexAttribPointer;
@@ -21,6 +21,7 @@ import com.example.lineplus.glcanvas.LineShaderProgram;
 public class Lines {
 	private static final int POSITION_COMPONENT_COUNT = 2;
 	private static final int COLOR_COMPONENT_COUNT = 3;
+	private static final float LINE_WIDTH = 0.01f;
 
 	private List<Line> lines = new Vector<>();
 	//	private List<Float> vertices = new ArrayList<>();
@@ -39,12 +40,12 @@ public class Lines {
 
 	public void addStartPoint(float x, float y, long eventTime) {
 		lines.add(new Line(x, y));
-/*		Line line = new Line(100, 200);
-		line.add(200,400);
-		line.add(400,300);
-		line.add(800,800);
-
-		lines.add(line);*/
+		/*		Line line = new Line(100, 200);
+				line.add(200,400);
+				line.add(400,300);
+				line.add(800,800);
+		
+				lines.add(line);*/
 	}
 
 	public void addDragPoint(float x, float y, long eventTime) {
@@ -60,23 +61,21 @@ public class Lines {
 
 		for (Line line : lines) {
 			if (dirty) {
-				if (vertexData.capacity() < line.points.size() * POSITION_COMPONENT_COUNT) {
-					vertexData = ByteBuffer.allocateDirect(line.points.size() * POSITION_COMPONENT_COUNT
+				if (vertexData.capacity() < line.points.size() * POSITION_COMPONENT_COUNT * 2) {
+					vertexData = ByteBuffer.allocateDirect(line.points.size() * POSITION_COMPONENT_COUNT * 2
 						* 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
 				}
-				//				vertexData.position(0);
 				vertexData.clear();
 				vertexData.put(line.pointsPositionToArray());
-				vertexData.limit(line.points.size() * POSITION_COMPONENT_COUNT);
+				vertexData.limit(line.points.size() * POSITION_COMPONENT_COUNT * 2);
 
-				if (colorData.capacity() < line.points.size() * COLOR_COMPONENT_COUNT) {
+				if (colorData.capacity() < line.points.size() * COLOR_COMPONENT_COUNT * 2) {
 					colorData = ByteBuffer.allocateDirect(line.points.size()
-						* COLOR_COMPONENT_COUNT * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+						* COLOR_COMPONENT_COUNT * 2 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
 				}
-				//				colorData.position(0);
 				colorData.clear();
 				colorData.put(line.pointsColorToArray());
-				colorData.limit(line.points.size() * COLOR_COMPONENT_COUNT);
+				colorData.limit(line.points.size() * COLOR_COMPONENT_COUNT * 2);
 			}
 
 			vertexData.position(0);
@@ -87,12 +86,12 @@ public class Lines {
 			glVertexAttribPointer(program.getAttrColor(), COLOR_COMPONENT_COUNT, GL_FLOAT, false, 0, colorData);
 			glEnableVertexAttribArray(program.getAttrColor());
 
-/*			long ts = System.currentTimeMillis();
-			Log.w("", String.format("%d, %d", ts, line.points.size()));
-			for (int index = 0; index < line.points.size();) {
-				Log.w("", String.format("%d, %f, %f", ts, vertexData.get(index++), vertexData.get(index++)));
-			}*/
-			glDrawArrays(GL_LINE_STRIP, 0, line.points.size());
+			/*			long ts = System.currentTimeMillis();
+						Log.w("", String.format("%d, %d", ts, line.points.size()));
+						for (int index = 0; index < line.points.size();) {
+							Log.w("", String.format("%d, %f, %f", ts, vertexData.get(index++), vertexData.get(index++)));
+						}*/
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, line.points.size() * 2);
 		}
 
 		dirty = false;
@@ -106,50 +105,82 @@ public class Lines {
 		return dirty;
 	}
 
-	private class Line {
-		private final List<PointF> points = new Vector<>();
+	class Line {
+		final List<PointF> points = new Vector<>();
 
-		private Line(float startX, float startY, float endX, float endY) {
+		Line(float startX, float startY, float endX, float endY) {
 			add(startX, startY);
 			add(endX, endY);
 		}
 
-		private Line(float x, float y) {
+		Line(float x, float y) {
 			add(x, y);
 		}
 
-		private void add(float x, float y) {
-			points.add(new PointF(x, y));
+		void add(float x, float y) {
+			PointF pointF = new PointF(convertX(x), convertY(y));
+			points.add(pointF);
 
-//			Log.w("add", String.format("%f,%f", x, y));
+//			Log.w("add", String.format("%f,%f - %f,%f", x, y, pointF.x, pointF.y));
+		}
+
+		private float convertX(float value) {
+			return (value / 1080 - 0.5f) * 2;
+		}
+
+		private float convertY(float value) {
+			return (value / 1920 - 0.5f) * -2;
 		}
 
 		public float[] pointsPositionToArray() {
-			float[] result = new float[points.size() * POSITION_COMPONENT_COUNT];
+			float[] result = new float[points.size() * POSITION_COMPONENT_COUNT * 2];
 
 			int index = 0;
 			synchronized (points) {
-				for (PointF pointF : points) {
-					//					Log.w("toArray", String.format("%f,%f", pointF.x, pointF.y));
-					result[index++] = (pointF.x / 1080 - 0.5f) * 2;
-					result[index++] = (pointF.y / 1920 - 0.5f) * -2;
+				Double rightRadian = 0.0;
+				Double leftRadian = 0.0;
+				for (int pointIndex = 0; pointIndex < points.size() - 1; pointIndex++) {
+					PointF curPoint = points.get(pointIndex);
+					PointF nextPoint = points.get(pointIndex + 1);
 
-//					Log.w("toArray2", String.format("%d,%f,%f", index, result[index - 2], result[index - 1]));
+					Double radian = Math.atan((nextPoint.y - curPoint.y) / (nextPoint.x - curPoint.x));
+					rightRadian = radian - Math.PI / 2;
+					leftRadian = radian + Math.PI / 2;
+
+					result[index++] = (float)(curPoint.x + Math.cos(leftRadian) * LINE_WIDTH);
+					result[index++] = (float)(curPoint.y + Math.sin(leftRadian) * LINE_WIDTH);
+
+					result[index++] = (float)(curPoint.x + Math.cos(rightRadian) * LINE_WIDTH);
+					result[index++] = (float)(curPoint.y + Math.sin(rightRadian) * LINE_WIDTH);
 				}
+
+				PointF curPoint = points.get(points.size() - 1);
+				result[index++] = (float)(curPoint.x + Math.cos(leftRadian) * LINE_WIDTH);
+				result[index++] = (float)(curPoint.y + Math.sin(leftRadian) * LINE_WIDTH);
+
+				result[index++] = (float)(curPoint.x + Math.cos(rightRadian) * LINE_WIDTH);
+				result[index++] = (float)(curPoint.y + Math.sin(rightRadian) * LINE_WIDTH);
 			}
 
+//			for (float f : result) {
+//				Log.w("toArray", String.format("%f", f));
+//			}
 			return result;
 		}
 
 		public float[] pointsColorToArray() {
-			float[] result = new float[points.size() * COLOR_COMPONENT_COUNT];
+			float[] result = new float[points.size() * COLOR_COMPONENT_COUNT * 2];
 
 			int index = 0;
 			synchronized (points) {
 				for (PointF pointF : points) {
-					result[index++] = (System.currentTimeMillis() % 101) / 100.f;
-					result[index++] = (System.currentTimeMillis() % 211) / 100.f;
-					result[index++] = (System.currentTimeMillis() % 311) / 100.f;
+					result[index++] = 1.0f;//(System.currentTimeMillis() % 101) / 100.f;
+					result[index++] = 1.0f;//(System.currentTimeMillis() % 211) / 100.f;
+					result[index++] = 1.0f;//(System.currentTimeMillis() % 311) / 100.f;
+
+					result[index++] = 1.0f;//(System.currentTimeMillis() % 101) / 100.f;
+					result[index++] = 1.0f;//(System.currentTimeMillis() % 211) / 100.f;
+					result[index++] = 1.0f;//(System.currentTimeMillis() % 311) / 100.f;
 				}
 			}
 			return result;

@@ -13,9 +13,9 @@ import javax.microedition.khronos.opengles.GL10;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
+import android.opengl.Matrix;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.v4.content.LocalBroadcastManager;
 
 import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
@@ -26,17 +26,18 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 	private final Bus eventBus;
 
 	private static final float vertexBuffer[] = new float[]{
-		-0.5f, 0.5f,
-		0.5f, 0.5f,
-		0.5f, -0.5f,
-		-0.5f, -0.5f
+			-0.5f, 0.5f,
+			0.5f, 0.5f,
+			0.5f, -0.5f,
+			-0.5f, -0.5f
 	};
 	private static final float colorBuffer[] = new float[]{
-		0f, 0f, 1f,
-		0f, 1f, 0f,
-		1f, 0f, 0f,
-		1f, 1f, 1f
+			0f, 0f, 1f,
+			0f, 1f, 0f,
+			1f, 0f, 0f,
+			1f, 1f, 1f
 	};
+	private float[] projectionM = new float[16];
 
 	private LineShaderProgram lineShaderProgram;
 	private Queue<Runnable> runOnDraw;
@@ -63,6 +64,12 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 	public void onSurfaceChanged(GL10 gl, int width, int height) {
 		glViewport(0, 0, width, height);
 
+		float aspectRatio = width > height ? 1.f * width / height : 1.f * height / width;
+		if (width > height)
+			Matrix.orthoM(projectionM, 0, -aspectRatio, aspectRatio, -1, 1, -1, 1);
+		else
+			Matrix.orthoM(projectionM, 0, -1, 1, -aspectRatio, aspectRatio, -1, 1);
+
 		new Handler(Looper.getMainLooper()).post(new Runnable() {
 			@Override
 			public void run() {
@@ -77,7 +84,7 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 
 		runAll(runOnDraw);
 
-		mainModel.getLines().draw(lineShaderProgram);
+		mainModel.getLines().draw(lineShaderProgram, projectionM);
 	}
 
 	@Subscribe

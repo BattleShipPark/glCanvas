@@ -11,7 +11,7 @@ import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
 
 public class SensorController implements SensorEventListener {
-	private static final int MIN_DEGREE = 3;
+	private static final int MIN_DEGREE = 5;
 	private final SensorManager mSensorManager;
 	private final Bus eventBus;
 	private float[] mRotationM = new float[16];
@@ -69,10 +69,10 @@ public class SensorController implements SensorEventListener {
 			Log.i("new  ", String.format("%f, %f, %f", newAngles[0], newAngles[1], newAngles[2]));
 			//			eventBus.post(new MainEvent.MatrixUpdated(mRotationM));
 
-			z = 1;
-			newAngles[0] = z;
-			newAngles[1] = 0;
-			newAngles[2] = 0;
+//			z = 5;
+//			newAngles[0] = z;
+//			newAngles[1] = 0;
+//			newAngles[2] = 0;
 			eventBus.post(new MainEvent.MatrixUpdated(newAngles));
 		}
 	}

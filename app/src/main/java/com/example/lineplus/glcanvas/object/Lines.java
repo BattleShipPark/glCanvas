@@ -1,10 +1,10 @@
 package com.example.lineplus.glcanvas.object;
 
 import static android.opengl.GLES20.GL_FLOAT;
-import static android.opengl.GLES20.GL_LINE_STRIP;
 import static android.opengl.GLES20.GL_TRIANGLE_STRIP;
 import static android.opengl.GLES20.glDrawArrays;
 import static android.opengl.GLES20.glEnableVertexAttribArray;
+import static android.opengl.GLES20.glUniform4fv;
 import static android.opengl.GLES20.glVertexAttribPointer;
 
 import java.nio.ByteBuffer;
@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Vector;
 
 import android.opengl.Matrix;
-import android.util.Log;
 
 import com.example.lineplus.glcanvas.LineShaderProgram;
 
@@ -72,8 +71,10 @@ public class Lines {
 	public void addEndPoint(float x, float y, long eventTime) {
 	}
 
-	public void draw(LineShaderProgram program) {
+	public void draw(LineShaderProgram program, float[] projectionM) {
 		program.useProgram();
+
+		program.setUniforms(projectionM);
 
 		for (Line line : lines) {
 			if (pointsUpdated) {
@@ -102,34 +103,34 @@ public class Lines {
 			glVertexAttribPointer(program.getAttrColor(), COLOR_COMPONENT_COUNT, GL_FLOAT, false, 0, colorData);
 			glEnableVertexAttribArray(program.getAttrColor());
 
-//			long ts = System.currentTimeMillis();
-//			Log.w("", String.format("%d, %d", ts, line.points.size()));
-//			for (int index = 0; index < line.points.size();) {
-//				Log.w("", String.format("%d, %f, %f", ts, vertexData.get(index++), vertexData.get(index++)));
-//			}
+			//			long ts = System.currentTimeMillis();
+			//			Log.w("", String.format("%d, %d", ts, line.points.size()));
+			//			for (int index = 0; index < line.points.size();) {
+			//				Log.w("", String.format("%d, %f, %f", ts, vertexData.get(index++), vertexData.get(index++)));
+			//			}
 			glDrawArrays(GL_TRIANGLE_STRIP, 0, line.points.size() * 2);
 		}
 
 		pointsUpdated = false;
-/*		vertexData = ByteBuffer.allocateDirect(4 * POSITION_COMPONENT_COUNT
-			* 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-		vertexData.clear();
-		vertexData.put(vertex);
-
-		colorData = ByteBuffer.allocateDirect(4 * COLOR_COMPONENT_COUNT * 2
-			* 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-		colorData.clear();
-		colorData.put(color);
-
-		vertexData.position(0);
-		glVertexAttribPointer(program.getAttrPosition(), POSITION_COMPONENT_COUNT, GL_FLOAT, false, 0, vertexData);
-		glEnableVertexAttribArray(program.getAttrPosition());
-
-		colorData.position(0);
-		glVertexAttribPointer(program.getAttrColor(), COLOR_COMPONENT_COUNT, GL_FLOAT, false, 0, colorData);
-		glEnableVertexAttribArray(program.getAttrColor());
-
-		glDrawArrays(GL_LINE_STRIP, 0, 4);*/
+		/*		vertexData = ByteBuffer.allocateDirect(4 * POSITION_COMPONENT_COUNT
+					* 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+				vertexData.clear();
+				vertexData.put(vertex);
+		
+				colorData = ByteBuffer.allocateDirect(4 * COLOR_COMPONENT_COUNT * 2
+					* 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+				colorData.clear();
+				colorData.put(color);
+		
+				vertexData.position(0);
+				glVertexAttribPointer(program.getAttrPosition(), POSITION_COMPONENT_COUNT, GL_FLOAT, false, 0, vertexData);
+				glEnableVertexAttribArray(program.getAttrPosition());
+		
+				colorData.position(0);
+				glVertexAttribPointer(program.getAttrColor(), COLOR_COMPONENT_COUNT, GL_FLOAT, false, 0, colorData);
+				glEnableVertexAttribArray(program.getAttrColor());
+		
+				glDrawArrays(GL_LINE_STRIP, 0, 4);*/
 	}
 
 	public void setPointsUpdated(boolean pointsUpdated) {
@@ -145,49 +146,49 @@ public class Lines {
 	 * @param matrix 4x4
 	 */
 	public void setMatrix(float[] values) {
-				for (Line line : lines) {
-					for (Point3F point : line.points) {
-						//				float[] vec = point.toArray();
-						//				Matrix.multiplyMV(vec, 0, matrix, 0, vec, 0);
-						//				point.set(vec);
-		
-						float[] m = new float[16];
-						Matrix.setRotateM(m, 0, values[0], 0, 0, 1);
-						Matrix.rotateM(m, 0, values[1], 1, 0, 0);
-						Matrix.rotateM(m, 0, values[2], 0, 1, 0);
-		
-						float[] vec4 = new float[4];
-						Matrix.multiplyMV(vec4, 0, m, 0, point.toArray(), 0);
-						point.set(vec4);
-					}
-				}
+		for (Line line : lines) {
+			for (Point3F point : line.points) {
+				//				float[] vec = point.toArray();
+				//				Matrix.multiplyMV(vec, 0, matrix, 0, vec, 0);
+				//				point.set(vec);
+
+				float[] m = new float[16];
+				Matrix.setRotateM(m, 0, values[0], 0, 0, 1);
+				Matrix.rotateM(m, 0, values[1], 1, 0, 0);
+				Matrix.rotateM(m, 0, values[2], 0, 1, 0);
+
+				float[] vec4 = new float[4];
+				Matrix.multiplyMV(vec4, 0, m, 0, point.toArray(), 0);
+				point.set(vec4);
+			}
+		}
 
 		setPointsUpdated(true);
 
-/*		for (int index = 0; index < 4; index++) {
-			//				float[] vec = point.toArray();
-			//				Matrix.multiplyMV(vec, 0, matrix, 0, vec, 0);
-			//				point.set(vec);
-
-			float[] v = new float[4];
-			v[0] = vertex[index * 3];
-			v[1] = vertex[index * 3 + 1];
-			v[2] = vertex[index * 3 + 2];
-			v[3] = 1;
-			Log.w("set1", String.format("%f,%f,%f - %f,%f,%f", values[0], values[1], values[2], v[0], v[1], v[2]));
-
-			float[] m = new float[16];
-			Matrix.setRotateM(m, 0, values[0], 0, 0, 1);
-			Matrix.rotateM(m, 0, values[1], 1, 0, 0);
-			Matrix.rotateM(m, 0, values[2], 0, 1, 0);
-
-			float[] vec4 = new float[4];
-			Matrix.multiplyMV(vec4, 0, m, 0, v, 0);
-			vertex[index * 3] = vec4[0];
-			vertex[index * 3 + 1] = vec4[1];
-			vertex[index * 3 + 2] = vec4[2];
-			Log.w("set2", String.format("%f,%f,%f", vec4[0], vec4[1], vec4[2]));
-		}*/
+		/*		for (int index = 0; index < 4; index++) {
+					//				float[] vec = point.toArray();
+					//				Matrix.multiplyMV(vec, 0, matrix, 0, vec, 0);
+					//				point.set(vec);
+		
+					float[] v = new float[4];
+					v[0] = vertex[index * 3];
+					v[1] = vertex[index * 3 + 1];
+					v[2] = vertex[index * 3 + 2];
+					v[3] = 1;
+					Log.w("set1", String.format("%f,%f,%f - %f,%f,%f", values[0], values[1], values[2], v[0], v[1], v[2]));
+		
+					float[] m = new float[16];
+					Matrix.setRotateM(m, 0, values[0], 0, 0, 1);
+					Matrix.rotateM(m, 0, values[1], 1, 0, 0);
+					Matrix.rotateM(m, 0, values[2], 0, 1, 0);
+		
+					float[] vec4 = new float[4];
+					Matrix.multiplyMV(vec4, 0, m, 0, v, 0);
+					vertex[index * 3] = vec4[0];
+					vertex[index * 3 + 1] = vec4[1];
+					vertex[index * 3 + 2] = vec4[2];
+					Log.w("set2", String.format("%f,%f,%f", vec4[0], vec4[1], vec4[2]));
+				}*/
 	}
 
 	class Line {
@@ -238,24 +239,24 @@ public class Lines {
 					float rightX = (float)(curPoint.x + Math.cos(rightRadian) * LINE_WIDTH);
 					float rightY = (float)(curPoint.y + Math.sin(rightRadian) * LINE_WIDTH);
 
-//					if (pointIndex == 0) {
-						result[index++] = leftX;
-						result[index++] = leftY;
-						result[index++] = curPoint.z;
+					//					if (pointIndex == 0) {
+					result[index++] = leftX;
+					result[index++] = leftY;
+					result[index++] = curPoint.z;
 
-						result[index++] = rightX;
-						result[index++] = rightY;
-						result[index++] = curPoint.z;
-/*					} else {
-						int savedIndex = index;
-						result[index++] = (result[savedIndex - 6] + leftX) / 2;
-						result[index++] = (result[savedIndex - 5] + leftY) / 2;
-						result[index++] = curPoint.z;
-
-						result[index++] = (result[savedIndex - 3] + rightX) / 2;
-						result[index++] = (result[savedIndex - 2] + rightY) / 2;
-						result[index++] = curPoint.z;
-					}*/
+					result[index++] = rightX;
+					result[index++] = rightY;
+					result[index++] = curPoint.z;
+					/*					} else {
+											int savedIndex = index;
+											result[index++] = (result[savedIndex - 6] + leftX) / 2;
+											result[index++] = (result[savedIndex - 5] + leftY) / 2;
+											result[index++] = curPoint.z;
+					
+											result[index++] = (result[savedIndex - 3] + rightX) / 2;
+											result[index++] = (result[savedIndex - 2] + rightY) / 2;
+											result[index++] = curPoint.z;
+										}*/
 				}
 
 				Point3F curPoint = points.get(points.size() - 1);

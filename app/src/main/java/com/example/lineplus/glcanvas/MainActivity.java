@@ -1,10 +1,17 @@
 package com.example.lineplus.glcanvas;
 
 import android.app.Activity;
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.example.lineplus.glcanvas.util.SystemUiHider;
+import com.squareup.otto.Subscribe;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -12,7 +19,7 @@ import com.example.lineplus.glcanvas.util.SystemUiHider;
  *
  * @see SystemUiHider
  */
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements SensorEventListener {
 	/**
 	 * The flags to pass to {@link SystemUiHider#getInstance}.
 	 */
@@ -26,6 +33,9 @@ public class MainActivity extends Activity {
 	private MainController controller;
 	private SystemUiHider mSystemUiHider;
 	private TouchController touchController;
+	private SensorManager mSensorManager;
+	private Sensor mAccSensor;
+	private Sensor mMagSensor;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -55,5 +65,77 @@ public class MainActivity extends Activity {
 		mSystemUiHider.setup();
 
 		touchController = new TouchController(this, mainModel, surfaceView, controller.getEventBus());
+
+		mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+		mAccSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+		mMagSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+
+		controller.getEventBus().register(this);
+	}
+
+	@Override
+	protected void onResume() {
+		mSensorManager.registerListener(this, mAccSensor, SensorManager.SENSOR_DELAY_UI);
+		mSensorManager.registerListener(this, mMagSensor, SensorManager.SENSOR_DELAY_UI);
+		super.onResume();
+	}
+
+	@Override
+	protected void onPause() {
+		mSensorManager.unregisterListener(this);
+		super.onPause();
+	}
+
+	float[] mRefOrientation = new float[3];
+	float[] mGravity;
+	float[] mGeomagnetic;
+
+	private static final int MIN_DEGREE = 5;
+
+	@Override
+	public void onSensorChanged(SensorEvent event) {
+		if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
+			mGravity = event.values;
+		if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
+			mGeomagnetic = event.values;
+		if (mGravity != null && mGeomagnetic != null) {
+			float R[] = new float[9];
+			float I[] = new float[9];
+			boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
+			if (success) {
+				float orientation[] = new float[3];
+				SensorManager.getOrientation(R, orientation);
+				//				azimut = orientation[0]; // orientation contains: azimut, pitch and roll
+				Log.i("input", String.format("%f, %f, %f", Math.toDegrees(orientation[0]), Math.toDegrees(orientation[1]), Math.toDegrees(orientation[2])));
+
+				double azimuth = Math.toDegrees(orientation[0] - mRefOrientation[0]);
+				double pitch = Math.toDegrees(orientation[1] - mRefOrientation[1]);
+				double roll = Math.toDegrees(orientation[2] - mRefOrientation[2]);
+				if (Math.abs(azimuth) >= MIN_DEGREE || Math.abs(pitch) >= MIN_DEGREE || Math.abs(roll) >= MIN_DEGREE) {
+					Log.w("adjust", String.format("%f, %f, %f", azimuth, pitch, roll));
+				}
+			}
+		}
+
+	}
+
+	@Override
+	public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+	}
+
+	@Subscribe
+	public void onTap(MainEvent.Touched event) {
+		float R[] = new float[9];
+		float I[] = new float[9];
+		boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
+		if (success) {
+			float orientation[] = new float[3];
+			SensorManager.getOrientation(R, orientation);
+
+			mRefOrientation[0] = orientation[0];
+			mRefOrientation[1] = orientation[1];
+			mRefOrientation[2] = orientation[2];
+		}
 	}
 }

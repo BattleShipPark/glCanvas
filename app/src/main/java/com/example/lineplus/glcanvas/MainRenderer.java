@@ -5,9 +5,6 @@ import static android.opengl.GLES20.glClear;
 import static android.opengl.GLES20.glClearColor;
 import static android.opengl.GLES20.glViewport;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -16,6 +13,9 @@ import javax.microedition.khronos.opengles.GL10;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
+import android.os.Handler;
+import android.os.Looper;
+import android.support.v4.content.LocalBroadcastManager;
 
 import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
@@ -23,6 +23,7 @@ import com.squareup.otto.Subscribe;
 public class MainRenderer implements GLSurfaceView.Renderer {
 	private final Context context;
 	private final MainModel mainModel;
+	private final Bus eventBus;
 
 	private static final float vertexBuffer[] = new float[]{
 		-0.5f, 0.5f,
@@ -44,6 +45,7 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 	public MainRenderer(Context context, MainModel mainModel, Bus eventBus) {
 		this.context = context;
 		this.mainModel = mainModel;
+		this.eventBus = eventBus;
 
 		eventBus.register(this);
 
@@ -60,6 +62,13 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 	@Override
 	public void onSurfaceChanged(GL10 gl, int width, int height) {
 		glViewport(0, 0, width, height);
+
+		new Handler(Looper.getMainLooper()).post(new Runnable() {
+			@Override
+			public void run() {
+				eventBus.post(MainEvent.SurfaceChanged.Changed);
+			}
+		});
 	}
 
 	@Override
@@ -76,10 +85,25 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 		runOnDraw(new Runnable() {
 			@Override
 			public void run() {
-				mainModel.getLines().setDirty(true);
+				mainModel.getLines().setPointsUpdated(true);
 			}
 		});
 		view.requestRender();
+	}
+
+	@Subscribe
+	public void onMatrixUpdated(final MainEvent.MatrixUpdated event) {
+		runOnDraw(new Runnable() {
+			@Override
+			public void run() {
+				mainModel.getLines().setMatrix(event.mRotationM);
+			}
+		});
+		view.requestRender();
+	}
+
+	public void setView(GLSurfaceView view) {
+		this.view = view;
 	}
 
 	synchronized private void runAll(Queue<Runnable> queue) {
@@ -90,13 +114,9 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 		}
 	}
 
-	protected void runOnDraw(final Runnable runnable) {
+	private void runOnDraw(final Runnable runnable) {
 		synchronized (runOnDraw) {
 			runOnDraw.add(runnable);
 		}
-	}
-
-	public void setView(GLSurfaceView view) {
-		this.view = view;
 	}
 }

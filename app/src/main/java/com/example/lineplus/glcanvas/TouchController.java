@@ -32,31 +32,30 @@ public class TouchController implements View.OnTouchListener {
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
 		switch (event.getAction()) {
-/*			case MotionEvent.ACTION_DOWN:
+			case MotionEvent.ACTION_DOWN:
 				if (!touching) {
 					mainModel.getLines().addStartPoint(event.getX(), event.getY(), event.getEventTime());
-					//					eventBus.post(MainEvent.PointsUpdated.UPDATED);
-
 					prevTouch.set(event.getX(), event.getY());
 
 					touching = true;
 				}
 
-				break;*/
-/*			case MotionEvent.ACTION_MOVE:
-				if (Math.abs(prevTouch.x - event.getX()) >= MIN_MOVE || Math.abs(prevTouch.y - event.getY()) >= MIN_MOVE) {
+				break;
+			case MotionEvent.ACTION_MOVE:
+				if (Math.abs(prevTouch.x - event.getX()) >= MIN_MOVE
+					|| Math.abs(prevTouch.y - event.getY()) >= MIN_MOVE) {
 					mainModel.getLines().addDragPoint(event.getX(), event.getY(), event.getEventTime());
-					eventBus.post(MainEvent.PointsUpdated.UPDATED);
 					prevTouch.set(event.getX(), event.getY());
+					eventBus.post(MainEvent.PointsUpdated.UPDATED);
 				}
 
-				break;*/
+				break;
 			case MotionEvent.ACTION_UP:
-/*				mainModel.getLines().addEndPoint(event.getX(), event.getY(), event.getEventTime());
+				mainModel.getLines().addEndPoint(event.getX(), event.getY(), event.getEventTime());
 				eventBus.post(MainEvent.PointsUpdated.UPDATED);
 
-				touching = false;*/
-				eventBus.post(MainEvent.Touched.TAP);
+				touching = false;
+				//				eventBus.post(MainEvent.Touched.TAP);
 				break;
 		}
 		return true;

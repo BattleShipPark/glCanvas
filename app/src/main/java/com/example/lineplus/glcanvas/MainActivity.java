@@ -1,17 +1,12 @@
 package com.example.lineplus.glcanvas;
 
 import android.app.Activity;
-import android.content.Context;
 import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
-import android.util.Log;
 
 import com.example.lineplus.glcanvas.util.SystemUiHider;
-import com.squareup.otto.Subscribe;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -19,7 +14,7 @@ import com.squareup.otto.Subscribe;
  *
  * @see SystemUiHider
  */
-public class MainActivity extends Activity implements SensorEventListener {
+public class MainActivity extends Activity {
 	/**
 	 * The flags to pass to {@link SystemUiHider#getInstance}.
 	 */
@@ -33,9 +28,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 	private MainController controller;
 	private SystemUiHider mSystemUiHider;
 	private TouchController touchController;
-	private SensorManager mSensorManager;
-	private Sensor mAccSensor;
-	private Sensor mMagSensor;
+	private SensorController sensorController;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -66,34 +59,31 @@ public class MainActivity extends Activity implements SensorEventListener {
 
 		touchController = new TouchController(this, mainModel, surfaceView, controller.getEventBus());
 
-		mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
-		mAccSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-		mMagSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+		sensorController = new SensorController(this, controller.getEventBus());
 
 		controller.getEventBus().register(this);
 	}
 
 	@Override
 	protected void onResume() {
-		mSensorManager.registerListener(this, mAccSensor, SensorManager.SENSOR_DELAY_NORMAL);
-		mSensorManager.registerListener(this, mMagSensor, SensorManager.SENSOR_DELAY_NORMAL);
+		sensorController.resume();
 		super.onResume();
 	}
 
 	@Override
 	protected void onPause() {
-		mSensorManager.unregisterListener(this);
+		sensorController.pause();
 		super.onPause();
 	}
 
-	float[] mRefOrientation = new float[3];
+/*	float[] mRefOrientation = new float[3];
 	float[] mPrevOrientation = new float[3];
 	float[] mGravity;
 	float[] mGeomagnetic;
 
-	private static final int MIN_DEGREE = 5;
+	private static final int MIN_DEGREE = 5;*/
 
-	@Override
+/*	@Override
 	public void onSensorChanged(SensorEvent event) {
 		if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
 			mGravity = event.values;
@@ -130,6 +120,8 @@ public class MainActivity extends Activity implements SensorEventListener {
 				mPrevOrientation[0] = orientation[0];
 				mPrevOrientation[1] = orientation[1];
 				mPrevOrientation[2] = orientation[2];
+
+				SensorManager.getRotationMatrixFromVector(,orientation);
 			}
 		}
 
@@ -172,5 +164,5 @@ public class MainActivity extends Activity implements SensorEventListener {
 			mRefOrientation[1] = mPrevOrientation[1] = orientation[1];
 			mRefOrientation[2] = mPrevOrientation[2] = orientation[2];
 		}
-	}
+	}*/
 }

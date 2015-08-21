@@ -5,7 +5,17 @@ public class MainEvent {
 		UPDATED
 	}
 
-	public enum Touched {
+	public enum SurfaceChanged {Changed}
+
+/*	public enum Touched {
 		TAP
+	}*/
+
+	public static class MatrixUpdated {
+		public final float[] mRotationM;
+
+		MatrixUpdated(float[] mRotationM) {
+			this.mRotationM = mRotationM;
+		}
 	}
 }

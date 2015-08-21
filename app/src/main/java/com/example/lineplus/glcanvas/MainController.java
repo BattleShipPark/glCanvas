@@ -3,14 +3,13 @@ package com.example.lineplus.glcanvas;
 import com.squareup.otto.Bus;
 
 public class MainController {
-	private final Bus eventBus;
+	private final Bus bus;
 
-	MainController() {
-		eventBus = new Bus();
-		eventBus.register(new MainEventController());
+	public MainController() {
+		bus = new Bus();
 	}
 
 	public Bus getEventBus() {
-		return eventBus;
+		return bus;
 	}
 }

@@ -75,8 +75,8 @@ public class MainActivity extends Activity implements SensorEventListener {
 
 	@Override
 	protected void onResume() {
-		mSensorManager.registerListener(this, mAccSensor, SensorManager.SENSOR_DELAY_UI);
-		mSensorManager.registerListener(this, mMagSensor, SensorManager.SENSOR_DELAY_UI);
+		mSensorManager.registerListener(this, mAccSensor, SensorManager.SENSOR_DELAY_NORMAL);
+		mSensorManager.registerListener(this, mMagSensor, SensorManager.SENSOR_DELAY_NORMAL);
 		super.onResume();
 	}
 
@@ -87,6 +87,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 	}
 
 	float[] mRefOrientation = new float[3];
+	float[] mPrevOrientation = new float[3];
 	float[] mGravity;
 	float[] mGeomagnetic;
 
@@ -106,17 +107,45 @@ public class MainActivity extends Activity implements SensorEventListener {
 				float orientation[] = new float[3];
 				SensorManager.getOrientation(R, orientation);
 				//				azimut = orientation[0]; // orientation contains: azimut, pitch and roll
-				Log.i("input", String.format("%f, %f, %f", Math.toDegrees(orientation[0]), Math.toDegrees(orientation[1]), Math.toDegrees(orientation[2])));
 
-				double azimuth = Math.toDegrees(orientation[0] - mRefOrientation[0]);
-				double pitch = Math.toDegrees(orientation[1] - mRefOrientation[1]);
-				double roll = Math.toDegrees(orientation[2] - mRefOrientation[2]);
-				if (Math.abs(azimuth) >= MIN_DEGREE || Math.abs(pitch) >= MIN_DEGREE || Math.abs(roll) >= MIN_DEGREE) {
+				orientation[0] = (float)Math.toDegrees(orientation[0]);
+				orientation[1] = (float)Math.toDegrees(orientation[1]);
+				orientation[2] = (float)Math.toDegrees(orientation[2]);
+
+				Log.i("input", String.format("%f, %f, %f %f, %f, %f", mRefOrientation[0], mRefOrientation[1], mRefOrientation[2], orientation[0], orientation[1], orientation[2]));
+
+				toPositive(orientation);
+
+				double azimuthDelta = getDelta(orientation[0], mPrevOrientation[0]);
+				double pitchDelta = getDelta(orientation[1], mPrevOrientation[1]);
+				double rollDelta = getDelta(orientation[2], mPrevOrientation[2]);
+				if (Math.abs(azimuthDelta) >= MIN_DEGREE || Math.abs(pitchDelta) >= MIN_DEGREE
+					|| Math.abs(rollDelta) >= MIN_DEGREE) {
+					double azimuth = getDelta(orientation[0], mRefOrientation[0]);
+					double pitch = getDelta(orientation[1], mRefOrientation[1]);
+					double roll = getDelta(orientation[2], mRefOrientation[2]);
 					Log.w("adjust", String.format("%f, %f, %f", azimuth, pitch, roll));
 				}
+
+				mPrevOrientation[0] = orientation[0];
+				mPrevOrientation[1] = orientation[1];
+				mPrevOrientation[2] = orientation[2];
 			}
 		}
 
+	}
+
+	private void toPositive(float[] degree) {
+		for (int index = 0; index < degree.length; index++)
+			if (degree[index] < 0)
+				degree[index] += 360;
+	}
+
+	private float getDelta(float degree1, float degree2) {
+		float delta = Math.abs(degree1 - degree2);
+		if (delta > 180)
+			delta -= 180;
+		return delta;
 	}
 
 	@Override
@@ -133,9 +162,15 @@ public class MainActivity extends Activity implements SensorEventListener {
 			float orientation[] = new float[3];
 			SensorManager.getOrientation(R, orientation);
 
-			mRefOrientation[0] = orientation[0];
-			mRefOrientation[1] = orientation[1];
-			mRefOrientation[2] = orientation[2];
+			orientation[0] = (float)Math.toDegrees(orientation[0]);
+			orientation[1] = (float)Math.toDegrees(orientation[1]);
+			orientation[2] = (float)Math.toDegrees(orientation[2]);
+
+			toPositive(orientation);
+
+			mRefOrientation[0] = mPrevOrientation[0] = orientation[0];
+			mRefOrientation[1] = mPrevOrientation[1] = orientation[1];
+			mRefOrientation[2] = mPrevOrientation[2] = orientation[2];
 		}
 	}
 }

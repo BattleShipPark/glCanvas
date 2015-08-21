@@ -1,7 +1,6 @@
 package com.example.lineplus.glcanvas.object;
 
 import static android.opengl.GLES20.GL_FLOAT;
-import static android.opengl.GLES20.GL_POINTS;
 import static android.opengl.GLES20.GL_TRIANGLE_STRIP;
 import static android.opengl.GLES20.glDrawArrays;
 import static android.opengl.GLES20.glEnableVertexAttribArray;
@@ -14,7 +13,6 @@ import java.util.List;
 import java.util.Vector;
 
 import android.graphics.PointF;
-import android.util.Log;
 
 import com.example.lineplus.glcanvas.LineShaderProgram;
 
@@ -121,7 +119,7 @@ public class Lines {
 			PointF pointF = new PointF(convertX(x), convertY(y));
 			points.add(pointF);
 
-//			Log.w("add", String.format("%f,%f - %f,%f", x, y, pointF.x, pointF.y));
+			//			Log.w("add", String.format("%f,%f - %f,%f", x, y, pointF.x, pointF.y));
 		}
 
 		private float convertX(float value) {
@@ -147,11 +145,30 @@ public class Lines {
 					rightRadian = radian - Math.PI / 2;
 					leftRadian = radian + Math.PI / 2;
 
-					result[index++] = (float)(curPoint.x + Math.cos(leftRadian) * LINE_WIDTH);
-					result[index++] = (float)(curPoint.y + Math.sin(leftRadian) * LINE_WIDTH);
+					float leftX = (float)(curPoint.x + Math.cos(leftRadian) * LINE_WIDTH);
+					float leftY = (float)(curPoint.y + Math.sin(leftRadian) * LINE_WIDTH);
 
-					result[index++] = (float)(curPoint.x + Math.cos(rightRadian) * LINE_WIDTH);
-					result[index++] = (float)(curPoint.y + Math.sin(rightRadian) * LINE_WIDTH);
+					float rightX = (float)(curPoint.x + Math.cos(rightRadian) * LINE_WIDTH);
+					float rightY = (float)(curPoint.y + Math.sin(rightRadian) * LINE_WIDTH);
+
+					if (pointIndex == 0) {
+						result[index++] = leftX;
+						result[index++] = leftY;
+
+						result[index++] = rightX;
+						result[index++] = rightY;
+					} else {
+						int savedIndex=index;
+						result[index] = (result[savedIndex - 4] + leftX) / 2;
+						index++;
+						result[index] = (result[savedIndex - 3] + leftY) / 2;
+						index++;
+
+						result[index] = (result[savedIndex - 2] + rightX) / 2;
+						index++;
+						result[index] = (result[savedIndex - 1] + rightY) / 2;
+						index++;
+					}
 				}
 
 				PointF curPoint = points.get(points.size() - 1);
@@ -162,9 +179,9 @@ public class Lines {
 				result[index++] = (float)(curPoint.y + Math.sin(rightRadian) * LINE_WIDTH);
 			}
 
-//			for (float f : result) {
-//				Log.w("toArray", String.format("%f", f));
-//			}
+			//			for (float f : result) {
+			//				Log.w("toArray", String.format("%f", f));
+			//			}
 			return result;
 		}
 

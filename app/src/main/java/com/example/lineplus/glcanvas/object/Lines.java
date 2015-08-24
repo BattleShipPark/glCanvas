@@ -22,7 +22,9 @@ import com.squareup.otto.Subscribe;
 public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 	private static final int POSITION_COMPONENT_COUNT = 3;
 	private static final int COLOR_COMPONENT_COUNT = 3;
-	private static final float LINE_WIDTH = 0.01f;
+	private static final int NUM_DIVISION_CIRCLE = 3;
+	private static final float LINE_WIDTH = 0.05f;
+	private static final int VERTEX_COUNT_COEFF = 2;//(NUM_DIVISION_CIRCLE + 1) * 2;
 
 	private List<Line> lines = new Vector<>();
 	//	private List<Float> vertices = new ArrayList<>();
@@ -89,21 +91,22 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 
 		for (Line line : lines) {
 			if (pointsUpdated) {
-				if (vertexData.capacity() < line.points.size() * POSITION_COMPONENT_COUNT * 2) {
-					vertexData = ByteBuffer.allocateDirect(line.points.size() * POSITION_COMPONENT_COUNT * 2
-						* 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+				if (vertexData.capacity() < line.points.size() * POSITION_COMPONENT_COUNT * VERTEX_COUNT_COEFF) {
+					vertexData = ByteBuffer.allocateDirect(line.points.size() * POSITION_COMPONENT_COUNT
+						* VERTEX_COUNT_COEFF * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
 				}
 				vertexData.clear();
 				vertexData.put(line.pointsPositionToArray());
-				vertexData.limit(line.points.size() * POSITION_COMPONENT_COUNT * 2);
+				vertexData.limit(line.points.size() * POSITION_COMPONENT_COUNT * VERTEX_COUNT_COEFF);
 
-				if (colorData.capacity() < line.points.size() * COLOR_COMPONENT_COUNT * 2) {
+				if (colorData.capacity() < line.points.size() * COLOR_COMPONENT_COUNT * VERTEX_COUNT_COEFF) {
 					colorData = ByteBuffer.allocateDirect(line.points.size()
-						* COLOR_COMPONENT_COUNT * 2 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+						* COLOR_COMPONENT_COUNT * (NUM_DIVISION_CIRCLE + 1) * 2 * 2
+						* 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
 				}
 				colorData.clear();
 				colorData.put(line.pointsColorToArray());
-				colorData.limit(line.points.size() * COLOR_COMPONENT_COUNT * 2);
+				colorData.limit(line.points.size() * COLOR_COMPONENT_COUNT * VERTEX_COUNT_COEFF);
 			}
 
 			vertexData.position(0);
@@ -153,8 +156,7 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 	}
 
 	/**
-	 *
-	 * @param matrix 4x4
+	 * @param values azimuth, pitch, roll
 	 */
 	public void setMatrix(float[] values) {
 		for (Line line : lines) {
@@ -239,8 +241,51 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 			return (value / 1920 - 0.5f) * -2;
 		}
 
+		/*		public float[] pointsPositionToArray() {
+					float[] result = new float[points.size() * POSITION_COMPONENT_COUNT * VERTEX_COUNT_COEFF];
+		
+					int index = 0;
+					synchronized (points) {
+						Double rightRadian;
+						for (int pointIndex = 0; pointIndex < points.size() - 1; pointIndex++) {
+							Point3F curPoint = points.get(pointIndex);
+							Point3F nextPoint = points.get(pointIndex + 1);
+		
+							Double radian = Math.atan((nextPoint.y - curPoint.y) / (nextPoint.x - curPoint.x));
+							rightRadian = radian - Math.PI / 2;
+		
+							float curRightX = (float)(curPoint.x + Math.cos(rightRadian) * LINE_WIDTH);
+							float curRightY = (float)(curPoint.y + Math.sin(rightRadian) * LINE_WIDTH);
+		
+							float nextRightX = (float)(nextPoint.x + Math.cos(rightRadian) * LINE_WIDTH);
+							float nextRightY = (float)(nextPoint.y + Math.sin(rightRadian) * LINE_WIDTH);
+		
+							int startIndex = index;
+							for (float rotationAngle = 0; rotationAngle < 2 * Math.PI; rotationAngle += 2 * Math.PI
+								/ NUM_DIVISION_CIRCLE) {
+								result[index++] = (float)((curRightX - curPoint.x) * Math.cos(rotationAngle) + curRightX);
+								result[index++] = (float)(curPoint.y - (curPoint.y - curRightY) * Math.cos(rotationAngle));
+								result[index++] = (float)(curPoint.z - Math.sin(rotationAngle));
+		
+								result[index++] = (float)((nextRightX - nextPoint.x) * Math.cos(rotationAngle) + nextRightX);
+								result[index++] = (float)(nextPoint.y - (nextPoint.y - nextRightY) * Math.cos(rotationAngle));
+								result[index++] = (float)(nextPoint.z - Math.sin(rotationAngle));
+							}
+							result[index++] = result[startIndex++];
+							result[index++] = result[startIndex++];
+							result[index++] = result[startIndex++];
+		
+							result[index++] = result[startIndex++];
+							result[index++] = result[startIndex++];
+							result[index++] = result[startIndex++];
+						}
+					}
+		
+					return result;
+				}*/
+
 		public float[] pointsPositionToArray() {
-			float[] result = new float[points.size() * POSITION_COMPONENT_COUNT * 2];
+			float[] result = new float[points.size() * POSITION_COMPONENT_COUNT * VERTEX_COUNT_COEFF];
 
 			int index = 0;
 			synchronized (points) {
@@ -260,7 +305,6 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 					float rightX = (float)(curPoint.x + Math.cos(rightRadian) * LINE_WIDTH);
 					float rightY = (float)(curPoint.y + Math.sin(rightRadian) * LINE_WIDTH);
 
-					//					if (pointIndex == 0) {
 					result[index++] = leftX;
 					result[index++] = leftY;
 					result[index++] = curPoint.z;
@@ -268,16 +312,6 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 					result[index++] = rightX;
 					result[index++] = rightY;
 					result[index++] = curPoint.z;
-					/*					} else {
-											int savedIndex = index;
-											result[index++] = (result[savedIndex - 6] + leftX) / 2;
-											result[index++] = (result[savedIndex - 5] + leftY) / 2;
-											result[index++] = curPoint.z;
-					
-											result[index++] = (result[savedIndex - 3] + rightX) / 2;
-											result[index++] = (result[savedIndex - 2] + rightY) / 2;
-											result[index++] = curPoint.z;
-										}*/
 				}
 
 				Point3F curPoint = points.get(points.size() - 1);
@@ -290,25 +324,15 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 				result[index++] = curPoint.z;
 			}
 
-			//			for (float f : result) {
-			//				Log.w("toArray", String.format("%f", f));
-			//			}
 			return result;
 		}
 
 		public float[] pointsColorToArray() {
-			float[] result = new float[points.size() * COLOR_COMPONENT_COUNT * 2];
+			float[] result = new float[points.size() * COLOR_COMPONENT_COUNT * VERTEX_COUNT_COEFF];
 
-			int index = 0;
 			synchronized (points) {
-				for (Point3F pointF : points) {
-					result[index++] = 1.0f;//(System.currentTimeMillis() % 101) / 100.f;
-					result[index++] = 1.0f;//(System.currentTimeMillis() % 211) / 100.f;
-					result[index++] = 1.0f;//(System.currentTimeMillis() % 311) / 100.f;
-
-					result[index++] = 1.0f;//(System.currentTimeMillis() % 101) / 100.f;
-					result[index++] = 1.0f;//(System.currentTimeMillis() % 211) / 100.f;
-					result[index++] = 1.0f;//(System.currentTimeMillis() % 311) / 100.f;
+				for (int index = 0; index < result.length; index++) {
+					result[index] = 1.f * index / result.length;
 				}
 			}
 			return result;

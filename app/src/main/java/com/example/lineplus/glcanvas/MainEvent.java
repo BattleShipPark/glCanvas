@@ -5,11 +5,21 @@ public class MainEvent {
 		UPDATED
 	}
 
-	public enum SurfaceChanged {Changed}
+	public static class SurfaceChanged {
+		public float[] projectionM;
 
-/*	public enum Touched {
-		TAP
-	}*/
+		public SurfaceChanged(float[] projectionM) {
+			this.projectionM = projectionM.clone();
+		}
+
+		public interface SurfaceChangedListener {
+			void onSurfaceChanged(SurfaceChanged event);
+		}
+	}
+
+	/*	public enum Touched {
+			TAP
+		}*/
 
 	public static class MatrixUpdated {
 		public final float[] mRotationM;

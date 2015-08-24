@@ -7,6 +7,7 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import com.squareup.otto.Bus;
+import com.squareup.otto.Subscribe;
 
 public class TouchController implements View.OnTouchListener {
 	private static final int MIN_MOVE = 20;

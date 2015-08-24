@@ -13,8 +13,8 @@ import android.view.WindowManager;
 import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
 
-public class SensorController implements SensorEventListener {
-	private static final int MIN_DEGREE = 5;
+public class SensorController implements SensorEventListener,MainEvent.SurfaceChanged.SurfaceChangedListener {
+	private static final int MIN_DEGREE = 0;
 	private final SensorManager mSensorManager;
 	private final WindowManager mWindowManager;
 	private final Bus eventBus;
@@ -45,7 +45,7 @@ public class SensorController implements SensorEventListener {
 		degrees[0] = (float)Math.toDegrees(values[0]);
 		degrees[1] = (float)Math.toDegrees(values[1]);
 		degrees[2] = (float)Math.toDegrees(values[2]);
-		Log.i("sensor", String.format("%f, %f, %f", degrees[0], degrees[1], degrees[2]));
+//		Log.i("sensor", String.format("%f, %f, %f", degrees[0], degrees[1], degrees[2]));
 
 		if (needToSetInitialValue) {
 			mInitialRotationV = degrees.clone();
@@ -73,7 +73,7 @@ public class SensorController implements SensorEventListener {
 		float[] delta = new float[3];
 		SensorManager.getAngleChange(delta, mRotationM, mPrevRotationM);
 		toDegrees(delta);
-		Log.i("delta ", String.format("%f, %f, %f", delta[0], delta[1], delta[2]));
+//		Log.i("delta ", String.format("%f, %f, %f", delta[0], delta[1], delta[2]));
 
 		if (Math.abs(delta[0]) >= MIN_DEGREE
 			|| Math.abs(delta[1]) >= MIN_DEGREE
@@ -81,7 +81,7 @@ public class SensorController implements SensorEventListener {
 
 			mPrevRotationM = mRotationM.clone();
 
-			Log.i("new  ", String.format("%f, %f, %f", delta[0], delta[1], delta[2]));
+//			Log.i("new  ", String.format("%f, %f, %f", delta[0], delta[1], delta[2]));
 
 			eventBus.post(new MainEvent.MatrixUpdated(delta));
 		}
@@ -97,6 +97,7 @@ public class SensorController implements SensorEventListener {
 	public void onAccuracyChanged(Sensor sensor, int accuracy) {
 	}
 
+	@Override
 	@Subscribe
 	public void onSurfaceChanged(MainEvent.SurfaceChanged event) {
 		needToSetInitialValue = true;

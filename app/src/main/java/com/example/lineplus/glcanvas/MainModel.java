@@ -1,11 +1,13 @@
 package com.example.lineplus.glcanvas;
 
 import com.example.lineplus.glcanvas.object.Lines;
+import com.squareup.otto.Bus;
 
 public class MainModel {
-	private final Lines lines = new Lines();
+	private final Lines lines;
 
-	public MainModel() {
+	public MainModel(Bus eventBus) {
+		lines = new Lines(eventBus);
 	}
 
 	public Lines getLines() {

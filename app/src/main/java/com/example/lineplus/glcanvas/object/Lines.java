@@ -4,7 +4,6 @@ import static android.opengl.GLES20.GL_FLOAT;
 import static android.opengl.GLES20.GL_TRIANGLE_STRIP;
 import static android.opengl.GLES20.glDrawArrays;
 import static android.opengl.GLES20.glEnableVertexAttribArray;
-import static android.opengl.GLES20.glUniform4fv;
 import static android.opengl.GLES20.glVertexAttribPointer;
 
 import java.nio.ByteBuffer;
@@ -16,8 +15,11 @@ import java.util.Vector;
 import android.opengl.Matrix;
 
 import com.example.lineplus.glcanvas.LineShaderProgram;
+import com.example.lineplus.glcanvas.MainEvent;
+import com.squareup.otto.Bus;
+import com.squareup.otto.Subscribe;
 
-public class Lines {
+public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 	private static final int POSITION_COMPONENT_COUNT = 3;
 	private static final int COLOR_COMPONENT_COUNT = 3;
 	private static final float LINE_WIDTH = 0.01f;
@@ -30,6 +32,7 @@ public class Lines {
 	private FloatBuffer colorData = ByteBuffer.allocate(0).order(ByteOrder.nativeOrder()).asFloatBuffer();
 	private float[] vertex;
 	private float[] color;
+	private float[] invertedProjectionM = new float[16];
 
 	/*	public List<Float> getVertices() {
 			return vertices;
@@ -38,7 +41,7 @@ public class Lines {
 		public void setVertices(List<Float> vertices) {
 			this.vertices = vertices;
 		}*/
-	public Lines() {
+	public Lines(Bus eventBus) {
 		vertex = new float[]{
 			-0.5f, 0.5f, 0,
 			0.5f, 0.5f, 0,
@@ -51,6 +54,14 @@ public class Lines {
 			0, 0, 1,
 			1, 1, 1
 		};
+
+		eventBus.register(this);
+	}
+
+	@Override
+	@Subscribe
+	public void onSurfaceChanged(MainEvent.SurfaceChanged event) {
+		Matrix.invertM(invertedProjectionM, 0, event.projectionM, 0);
 	}
 
 	public void addStartPoint(float x, float y, long eventTime) {
@@ -204,9 +215,19 @@ public class Lines {
 		}
 
 		void add(float x, float y) {
-			Point3F pointF = new Point3F(convertX(x), convertY(y), 0);
-			points.add(pointF);
+			//			Point3F pointF = new Point3F(convertX(x), convertY(y), 0);
+			//			points.add(pointF);
 
+			float[] vec = new float[]{convertX(x), convertY(y), 0, 0};
+			//			vec[0] = convertX(x);
+			//			vec[1] = convertY(y);
+			//			vec[2] = 0;
+
+			float[] result = new float[4];
+			Matrix.multiplyMV(result, 0, invertedProjectionM, 0, vec, 0);
+
+			Point3F pointF = new Point3F(result[0], result[1], 0);
+			points.add(pointF);
 			//			Log.w("add", String.format("%f,%f - %f,%f", x, y, pointF.x, pointF.y));
 		}
 

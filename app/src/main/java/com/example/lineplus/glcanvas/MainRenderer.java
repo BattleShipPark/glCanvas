@@ -73,7 +73,7 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 		new Handler(Looper.getMainLooper()).post(new Runnable() {
 			@Override
 			public void run() {
-				eventBus.post(MainEvent.SurfaceChanged.Changed);
+				eventBus.post(new MainEvent.SurfaceChanged(projectionM));
 			}
 		});
 	}

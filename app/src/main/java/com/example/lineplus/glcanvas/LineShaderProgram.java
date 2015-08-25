@@ -16,11 +16,13 @@ public class LineShaderProgram extends ShaderProgram {
 	private final int aColor;
 
 	private final int uProjMatrixLocation;
+	private final int uCameraMatrixLocation;
 
 	public LineShaderProgram(Context context) {
 		super(context, R.raw.line_vertex_shader, R.raw.line_vertex_fragment);
 
 		uProjMatrixLocation = glGetUniformLocation(program, U_PROJ_MATRIX);
+		uCameraMatrixLocation = glGetUniformLocation(program, U_CAMERA_MATRIX);
 		//		uTextureUnitLocation = glGetUniformLocation(program, U_TEXTURE_UNIT);
 
 		aPosition = glGetAttribLocation(program, A_POSITION);
@@ -28,8 +30,10 @@ public class LineShaderProgram extends ShaderProgram {
 		//		aTextureCoordinatesLocation = glGetAttribLocation(program, A_TEXTURE_COORDINATES);
 	}
 
-	public void setUniforms(float[] matrix) {
-		glUniformMatrix4fv(uProjMatrixLocation, 1, false, matrix, 0);
+	public void setUniforms(float[] projM, float[] cameraM) {
+		glUniformMatrix4fv(uProjMatrixLocation, 1, false, projM, 0);
+
+		glUniformMatrix4fv(uCameraMatrixLocation, 1, false, cameraM, 0);
 		//
 		//		glActiveTexture(GL_TEXTURE0);
 		//

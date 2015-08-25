@@ -6,6 +6,7 @@ import android.content.Context;
 
 public class ShaderProgram {
 	protected static final String U_PROJ_MATRIX = "u_ProjMatrix";
+	protected static final String U_CAMERA_MATRIX = "u_CameraMatrix";
 	protected static final String U_TEXTURE_UNIT = "u_TextureUnit";
 
 	protected static final String A_POSITION = "a_Position";

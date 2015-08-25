@@ -84,13 +84,16 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 	public void addEndPoint(float x, float y, long eventTime) {
 	}
 
-	public void draw(LineShaderProgram program, float[] projectionM) {
+	public void draw(LineShaderProgram program, float[] projectionM, float[] cameraM) {
+		if (lines.size() == 0)
+			return;
+
 		program.useProgram();
 
-		program.setUniforms(projectionM);
+		program.setUniforms(projectionM, cameraM);
 
 		for (Line line : lines) {
-			if (pointsUpdated) {
+//			if (pointsUpdated) {
 				if (vertexData.capacity() < line.points.size() * POSITION_COMPONENT_COUNT * VERTEX_COUNT_COEFF) {
 					vertexData = ByteBuffer.allocateDirect(line.points.size() * POSITION_COMPONENT_COUNT
 						* VERTEX_COUNT_COEFF * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
@@ -107,7 +110,7 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 				colorData.clear();
 				colorData.put(line.pointsColorToArray());
 				colorData.limit(line.points.size() * COLOR_COMPONENT_COUNT * VERTEX_COUNT_COEFF);
-			}
+//			}
 
 			vertexData.position(0);
 			glVertexAttribPointer(program.getAttrPosition(), POSITION_COMPONENT_COUNT, GL_FLOAT, false, 0, vertexData);
@@ -158,51 +161,26 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 	/**
 	 * @param values azimuth, pitch, roll
 	 */
-	public void setMatrix(float[] values) {
-		for (Line line : lines) {
-			for (Point3F point : line.points) {
-				//				float[] vec = point.toArray();
-				//				Matrix.multiplyMV(vec, 0, matrix, 0, vec, 0);
-				//				point.set(vec);
-
-				float[] m = new float[16];
-				Matrix.setRotateM(m, 0, values[0], 0, 0, 1);
-				Matrix.rotateM(m, 0, values[1], 1, 0, 0);
-				Matrix.rotateM(m, 0, values[2], 0, 1, 0);
-
-				float[] vec4 = new float[4];
-				Matrix.multiplyMV(vec4, 0, m, 0, point.toArray(), 0);
-				point.set(vec4);
-			}
-		}
-
-		setPointsUpdated(true);
-
-		/*		for (int index = 0; index < 4; index++) {
+	/*	public void setMatrix(float[] values) {
+			for (Line line : lines) {
+				for (Point3F point : line.points) {
 					//				float[] vec = point.toArray();
 					//				Matrix.multiplyMV(vec, 0, matrix, 0, vec, 0);
 					//				point.set(vec);
-		
-					float[] v = new float[4];
-					v[0] = vertex[index * 3];
-					v[1] = vertex[index * 3 + 1];
-					v[2] = vertex[index * 3 + 2];
-					v[3] = 1;
-					Log.w("set1", String.format("%f,%f,%f - %f,%f,%f", values[0], values[1], values[2], v[0], v[1], v[2]));
-		
+	
 					float[] m = new float[16];
 					Matrix.setRotateM(m, 0, values[0], 0, 0, 1);
 					Matrix.rotateM(m, 0, values[1], 1, 0, 0);
 					Matrix.rotateM(m, 0, values[2], 0, 1, 0);
-		
+	
 					float[] vec4 = new float[4];
-					Matrix.multiplyMV(vec4, 0, m, 0, v, 0);
-					vertex[index * 3] = vec4[0];
-					vertex[index * 3 + 1] = vec4[1];
-					vertex[index * 3 + 2] = vec4[2];
-					Log.w("set2", String.format("%f,%f,%f", vec4[0], vec4[1], vec4[2]));
-				}*/
-	}
+					Matrix.multiplyMV(vec4, 0, m, 0, point.toArray(), 0);
+					point.set(vec4);
+				}
+			}
+	
+			setPointsUpdated(true);
+		}*/
 
 	class Line {
 		final List<Point3F> points = new Vector<>();
@@ -225,8 +203,8 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 			//			vec[1] = convertY(y);
 			//			vec[2] = 0;
 
-			float[] result = new float[4];
-			Matrix.multiplyMV(result, 0, invertedProjectionM, 0, vec, 0);
+			float[] result = vec;//new float[4];
+//			Matrix.multiplyMV(result, 0, invertedProjectionM, 0, vec, 0);
 
 			Point3F pointF = new Point3F(result[0], result[1], 0);
 			points.add(pointF);
@@ -332,7 +310,7 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 
 			synchronized (points) {
 				for (int index = 0; index < result.length; index++) {
-					result[index] = 1.f * index / result.length;
+					result[index] = 1.f;// * index / result.length;
 				}
 			}
 			return result;

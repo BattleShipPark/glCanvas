@@ -30,19 +30,13 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 	//	private List<Float> vertices = new ArrayList<>();
 	private boolean pointsUpdated;
 
-	private FloatBuffer vertexData = ByteBuffer.allocate(0).order(ByteOrder.nativeOrder()).asFloatBuffer();
-	private FloatBuffer colorData = ByteBuffer.allocate(0).order(ByteOrder.nativeOrder()).asFloatBuffer();
+	private FloatBuffer vertexData = ByteBuffer.allocateDirect(0).order(ByteOrder.nativeOrder()).asFloatBuffer();
+	private FloatBuffer colorData = ByteBuffer.allocateDirect(0).order(ByteOrder.nativeOrder()).asFloatBuffer();
 	private float[] vertex;
 	private float[] color;
 	private float[] invertedProjectionM = new float[16];
+	private int screenWidth, screenHeight;
 
-	/*	public List<Float> getVertices() {
-			return vertices;
-		}
-	
-		public void setVertices(List<Float> vertices) {
-			this.vertices = vertices;
-		}*/
 	public Lines(Bus eventBus) {
 		vertex = new float[]{
 			-0.5f, 0.5f, 0,
@@ -63,15 +57,18 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 	@Override
 	@Subscribe
 	public void onSurfaceChanged(MainEvent.SurfaceChanged event) {
+		screenWidth = event.width;
+		screenHeight = event.height;
+
 		Matrix.invertM(invertedProjectionM, 0, event.projectionM, 0);
 	}
 
 	public void addStartPoint(float x, float y, long eventTime) {
 		lines.add(new Line(x, y));
 		/*		Line line = new Line(100, 200);
-				line.add(200,400);
-				line.add(400,300);
-				line.add(800,800);
+				line.add(540, 400);
+				line.add(980, 900);
+				line.add(100, 1500);
 		
 				lines.add(line);*/
 	}
@@ -93,7 +90,7 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 		program.setUniforms(projectionM, cameraM);
 
 		for (Line line : lines) {
-//			if (pointsUpdated) {
+			if (pointsUpdated) {
 				if (vertexData.capacity() < line.points.size() * POSITION_COMPONENT_COUNT * VERTEX_COUNT_COEFF) {
 					vertexData = ByteBuffer.allocateDirect(line.points.size() * POSITION_COMPONENT_COUNT
 						* VERTEX_COUNT_COEFF * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
@@ -110,7 +107,7 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 				colorData.clear();
 				colorData.put(line.pointsColorToArray());
 				colorData.limit(line.points.size() * COLOR_COMPONENT_COUNT * VERTEX_COUNT_COEFF);
-//			}
+			}
 
 			vertexData.position(0);
 			glVertexAttribPointer(program.getAttrPosition(), POSITION_COMPONENT_COUNT, GL_FLOAT, false, 0, vertexData);
@@ -204,7 +201,7 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 			//			vec[2] = 0;
 
 			float[] result = vec;//new float[4];
-//			Matrix.multiplyMV(result, 0, invertedProjectionM, 0, vec, 0);
+			//			Matrix.multiplyMV(result, 0, invertedProjectionM, 0, vec, 0);
 
 			Point3F pointF = new Point3F(result[0], result[1], 0);
 			points.add(pointF);
@@ -212,11 +209,11 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 		}
 
 		private float convertX(float value) {
-			return (value / 1080 - 0.5f) * 2;
+			return (value / screenWidth - 0.5f) * 2;
 		}
 
 		private float convertY(float value) {
-			return (value / 1920 - 0.5f) * -2;
+			return (value / screenHeight - 0.5f) * -2;
 		}
 
 		/*		public float[] pointsPositionToArray() {
@@ -310,7 +307,7 @@ public class Lines implements MainEvent.SurfaceChanged.SurfaceChangedListener {
 
 			synchronized (points) {
 				for (int index = 0; index < result.length; index++) {
-					result[index] = 1.f;// * index / result.length;
+					result[index] = Math.min(1.f * index / result.length + 0.5f, 1f);
 				}
 			}
 			return result;

@@ -5,6 +5,7 @@ import static android.opengl.GLES20.glGetUniformLocation;
 import static android.opengl.GLES20.glUniformMatrix4fv;
 
 import android.content.Context;
+import android.opengl.Matrix;
 
 import com.example.lineplus.glcanvas.shader.ShaderProgram;
 
@@ -27,6 +28,7 @@ public class LineShaderProgram extends ShaderProgram {
 
 		aPosition = glGetAttribLocation(program, A_POSITION);
 		aColor = glGetAttribLocation(program, A_COLOR);
+
 		//		aTextureCoordinatesLocation = glGetAttribLocation(program, A_TEXTURE_COORDINATES);
 	}
 

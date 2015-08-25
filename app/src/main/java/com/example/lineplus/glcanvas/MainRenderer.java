@@ -16,6 +16,7 @@ import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
@@ -54,10 +55,11 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 
 		runOnDraw = new LinkedList<>();
 
-		cameraEyeV = new float[]{0, 0, 2, 0};
-		cameraUpV = new float[]{0, 1, 0, 0};
+		cameraEyeV = new float[]{0, 0, 2f, 0};
+		cameraUpV = new float[]{0, 1f, 0, 0};
 		cameraMatrix = new float[16];
 		Matrix.setLookAtM(cameraMatrix, 0, cameraEyeV[0], cameraEyeV[1], cameraEyeV[2], 0, 0, 0, cameraUpV[0], cameraUpV[1], cameraUpV[2]);
+//		Matrix.setIdentityM(cameraMatrix,0);
 
 		eventBus.register(this);
 
@@ -71,7 +73,7 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 	}
 
 	@Override
-	public void onSurfaceChanged(GL10 gl, int width, int height) {
+	public void onSurfaceChanged(GL10 gl, final int width, final int height) {
 		glViewport(0, 0, width, height);
 
 		/*		float aspectRatio = width > height ? 1.1f * width / height : 1.1f * height / width;
@@ -79,12 +81,12 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 					Matrix.orthoM(projectionM, 0, -aspectRatio, aspectRatio, -1.1f, 1.1f, -2f, 2f);
 				else
 					Matrix.orthoM(projectionM, 0, -1.1f, 1.1f, -aspectRatio, aspectRatio, -2f, 2f);*/
-		Matrix.perspectiveM(projectionM, 0, 90, (float)width / height, -1, 1);
+		Matrix.perspectiveM(projectionM, 0, 90, 1.f * width / height, 1, 10);
 
 		new Handler(Looper.getMainLooper()).post(new Runnable() {
 			@Override
 			public void run() {
-				eventBus.post(new MainEvent.SurfaceChanged(projectionM));
+				eventBus.post(new MainEvent.SurfaceChanged(width, height, projectionM));
 			}
 		});
 	}
@@ -126,17 +128,14 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 	 */
 	private void setCameraMatrix(float[] values) {
 		float[] rotationM = new float[16];
-		Matrix.setRotateM(rotationM, 0, values[0], 0, 0, 1);
-		Matrix.rotateM(rotationM, 0, values[1], 1, 0, 0);
+//		values[0] = 0;
+//		values[1] = 2;
+//		values[2] = 0;
+		Matrix.setRotateM(rotationM, 0, values[1], 1, 0, 0);
 		Matrix.rotateM(rotationM, 0, values[2], 0, 1, 0);
+		Matrix.rotateM(rotationM, 0, values[0], 0, 0, 1);
 
 		Matrix.multiplyMV(cameraEyeV, 0, rotationM, 0, cameraEyeV, 0);
-
-		/* */
-
-		//		Matrix.setRotateM(rotationM, 0, values[0], 0, 0, 1);
-		//		Matrix.rotateM(rotationM, 0, values[1], 1, 0, 0);
-		//		Matrix.rotateM(rotationM, 0, values[2], 0, 1, 0);
 
 		Matrix.multiplyMV(cameraUpV, 0, rotationM, 0, cameraUpV, 0);
 

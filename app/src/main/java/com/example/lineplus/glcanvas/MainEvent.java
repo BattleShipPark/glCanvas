@@ -6,9 +6,13 @@ public class MainEvent {
 	}
 
 	public static class SurfaceChanged {
+		public final int width;
+		public final int height;
 		public float[] projectionM;
 
-		public SurfaceChanged(float[] projectionM) {
+		public SurfaceChanged(int width, int height, float[] projectionM) {
+			this.width = width;
+			this.height = height;
 			this.projectionM = projectionM.clone();
 		}
 

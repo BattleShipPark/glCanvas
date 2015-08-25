@@ -52,8 +52,8 @@ public class MainActivity extends Activity {
 
 		// Set up an instance of SystemUiHider to control the system UI for
 		// this activity.
-		mSystemUiHider = SystemUiHider.getInstance(this, surfaceView, HIDER_FLAGS);
-		mSystemUiHider.setup();
+//		mSystemUiHider = SystemUiHider.getInstance(this, surfaceView, HIDER_FLAGS);
+//		mSystemUiHider.setup();
 
 		touchController = new TouchController(this, mainModel, surfaceView, controller.getEventBus());
 

@@ -7,7 +7,6 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import com.squareup.otto.Bus;
-import com.squareup.otto.Subscribe;
 
 public class TouchController implements View.OnTouchListener {
 	private static final int MIN_MOVE = 20;
@@ -56,7 +55,6 @@ public class TouchController implements View.OnTouchListener {
 				eventBus.post(MainEvent.PointsUpdated.UPDATED);
 
 				touching = false;
-				//				eventBus.post(MainEvent.Touched.TAP);
 				break;
 		}
 		return true;

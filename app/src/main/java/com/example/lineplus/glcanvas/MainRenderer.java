@@ -108,7 +108,7 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 				mainModel.getLines().setPointsUpdated(true);
 			}
 		});
-		view.requestRender();
+//		view.requestRender();
 	}
 
 	@Subscribe
@@ -120,7 +120,7 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 				setCameraMatrix(event.mRotationM);
 			}
 		});
-		view.requestRender();
+//		view.requestRender();
 	}
 
 	/**
@@ -140,6 +140,8 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 		Matrix.multiplyMV(cameraUpV, 0, rotationM, 0, cameraUpV, 0);
 
 		Matrix.setLookAtM(cameraMatrix, 0, cameraEyeV[0], cameraEyeV[1], cameraEyeV[2], 0, 0, 0, cameraUpV[0], cameraUpV[1], cameraUpV[2]);
+
+		mainModel.getLines().setCameraMatrixUpdated(true);
 	}
 
 	public void setView(GLSurfaceView view) {
@@ -147,7 +149,7 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 	}
 
 	synchronized private void runAll(Queue<Runnable> queue) {
-		synchronized (this) {
+		synchronized (queue) {
 			while (!queue.isEmpty()) {
 				queue.poll().run();
 			}

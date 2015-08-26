@@ -44,7 +44,7 @@ public class MainActivity extends Activity {
 		surfaceView.setEGLContextClientVersion(2);
 		surfaceView.setEGLConfigChooser(8, 8, 8, 8, 16, 0);
 		surfaceView.setRenderer(renderer);
-		surfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+//		surfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 
 		renderer.setView(surfaceView);
 
